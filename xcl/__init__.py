@@ -24,6 +24,13 @@ class Peek:
                 self.cur = StopIteration
         return ret
 
+    def expect(self, what):
+        if not isinstance(next(self), what):
+            if isinstance(what, (tuple, list)):
+                choices = ", ".join(x.__class__.__name__ for x in what)
+                raise Exception(f"Expected any of {choices}; found {self.cur!r}")
+            raise Exception(f"Expected {what}; found {self.cur!r}")
+
 
 class Token:
     def __init__(self, val=None):
@@ -241,9 +248,7 @@ def parse_assn(tokens):
         key = tokens.cur.val
     next(tokens)
 
-    if not isinstance(tokens.cur, Eq):
-        raise Exception(f"Expected Eq token, found {tokens.cur!r}")
-    next(tokens)
+    tokens.expect(Eq)
 
     val = parse_val(tokens)
     return key, val
@@ -269,38 +274,29 @@ def parse_val(tokens):
 
 
 def parse_dict(tokens):
-    if not isinstance(tokens.cur, Cul):
-        raise Exception(f"Expected Cul; found {tokens.cur!r}")
-    next(tokens)
-
+    tokens.expect(Cul)
     into = {}
 
     while not isinstance(tokens.cur, Cur):
         key, val = parse_assn(tokens)
         into[key] = val
 
-    if not isinstance(tokens.cur, Cur):
-        raise Exception(f"Expected Cur; found {tokens.cur!r}")
-    next(tokens)
+    tokens.expect(Cur)
 
     return into
 
 
 def parse_list(tokens):
-    if not isinstance(tokens.cur, Sql):
-        raise Exception(f"Expected Sql; found {tokens.cur!r}")
-    next(tokens)
-
+    tokens.expect(Sql)
     into = []
+
     while not isinstance(tokens.cur, Sqr):
         val = parse_val(tokens)
         into.append(val)
         if isinstance(tokens.cur, Com):
             next(tokens)
 
-    if not isinstance(tokens.cur, Sqr):
-        raise Exception(f"Expected Sqr; found {tokens.cur!r}")
-    next(tokens)
+    tokens.expect(Sqr)
 
     return into
 
