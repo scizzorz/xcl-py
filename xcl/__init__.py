@@ -25,9 +25,19 @@ class Peek:
                 self.cur = StopIteration
         return ret
 
+    @staticmethod
+    def check(thing, what):
+        return isinstance(thing, what)
+
+    def done(self):
+        return self.cur is StopIteration
+
+    def __bool__(self):
+        return not self.done()
+
     def expect(self, *what):
         check = next(self)
-        if not isinstance(check, what):
+        if not self.check(check, what):
             if len(what) > 1:
                 choices = ", ".join(x.__name__ for x in what)
                 raise Exception(f"Expected any of {choices}; found {self.cur!r}")
@@ -36,7 +46,7 @@ class Peek:
         return check
 
     def has(self, *what):
-        return self.cur if isinstance(self.cur, what) else None
+        return self.cur if self.check(self.cur, what) else None
 
     def maybe(self, *what):
         check = self.has(*what)
@@ -50,6 +60,12 @@ class Peek:
         self.expect(left)
         yield
         self.expect(right)
+
+
+class CharPeek(Peek):
+    @staticmethod
+    def check(thing, what):
+        return thing in what
 
 
 class Token:
@@ -138,54 +154,51 @@ SKIP = string.whitespace
 
 
 def lex(text):
-    chars = Peek(iter(text))
+    chars = CharPeek(iter(text))
 
-    while chars.cur is not StopIteration:
-        if chars.cur in VALID_ID_START:
+    while not chars.done():
+        if chars.has(*VALID_ID_START):
             yield lex_id(chars)
             continue
 
-        if chars.cur in VALID_NUM_START:
+        if chars.has(*VALID_NUM_START):
             yield lex_num(chars)
             continue
 
-        if chars.cur == "0":
-            next(chars)
-            if chars.cur == ".":
-                next(chars)
+        if chars.maybe("0"):
+            if chars.maybe("."):
                 yield lex_num(chars, start="0.")
             else:
                 yield Int(0)
             continue
 
-        if chars.cur == '"':
+        if chars.has('"'):
             yield lex_str(chars)
             continue
 
-        if chars.cur == "|":
-            next(chars)
-            if chars.cur == '"':
+        if chars.maybe("|"):
+            if chars.has('"'):
                 yield lex_str(chars, dedent=True)
                 continue
             else:
                 raise Exception(f"Unexpected character sequence: |{chars.cur}")
 
-        if chars.cur == "[":
+        if chars.has("["):
             yield Sql()
 
-        if chars.cur == "]":
+        if chars.has("]"):
             yield Sqr()
 
-        if chars.cur == "{":
+        if chars.has("{"):
             yield Cul()
 
-        if chars.cur == "}":
+        if chars.has("}"):
             yield Cur()
 
-        if chars.cur == ",":
+        if chars.has(","):
             yield Com()
 
-        if chars.cur == "=":
+        if chars.has("="):
             yield Eq()
 
         try:
@@ -196,9 +209,8 @@ def lex(text):
 
 def lex_id(chars):
     build = []
-    while chars.cur is not StopIteration and chars.cur in VALID_ID:
-        build.append(chars.cur)
-        next(chars)
+    while not chars.done() and chars.has(*VALID_ID):
+        build.append(next(chars))
 
     id = "".join(build)
     return KEYWORD_MAP.get(id, Id)(id)
@@ -206,9 +218,8 @@ def lex_id(chars):
 
 def lex_num(chars, start=""):
     build = list(start)
-    while chars.cur is not StopIteration and chars.cur in VALID_NUM:
-        build.append(chars.cur)
-        next(chars)
+    while not chars.done() and chars.has(*VALID_NUM):
+        build.append(next(chars))
 
     token = Float if "." in build else Int
     return token("".join(build))
@@ -217,22 +228,18 @@ def lex_num(chars, start=""):
 def lex_str(chars, dedent=False):
     build = []
     start = next(chars)
-    while chars.cur is not StopIteration:
-        if chars.cur == start:
-            next(chars)
+    while not chars.done():
+        if chars.maybe(start):
             break
 
-        if chars.cur == "\\":
-            next(chars)
-            if chars.cur in STR_ESCAPES:
-                build.append(STR_ESCAPES[chars.cur])
+        if chars.maybe("\\"):
+            if chars.has(*STR_ESCAPES):
+                build.append(STR_ESCAPES[next(chars)])
             else:
                 raise Exception(f"Invalid string escape sequence: \\{chars.cur}")
 
         else:
-            build.append(chars.cur)
-
-        next(chars)
+            build.append(next(chars))
 
     result = "".join(build)
     if dedent:
@@ -256,7 +263,7 @@ def parse(tokens):
     into = {}
 
     tokens = Peek(iter(tokens))
-    while tokens.cur is not StopIteration:
+    while not tokens.done():
         key, val = parse_assn(tokens)
         into[key] = val
 
@@ -278,8 +285,7 @@ def parse_val(tokens):
         val = parse_list(tokens)
 
     elif tokens.has(Boolean, Null, Int, Float, Str):
-        val = tokens.cur.val
-        next(tokens)
+        val = next(tokens).val
 
     else:
         raise Exception(
