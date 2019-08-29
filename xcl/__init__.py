@@ -119,6 +119,14 @@ def lex(text):
             yield lex_str(chars)
             continue
 
+        if chars.cur == '|':
+            next(chars)
+            if chars.cur == '"':
+              yield lex_str(chars, dedent=True)
+              continue
+            else:
+              raise Exception(f"Unexpected character sequence: |{chars.cur}")
+
         if chars.cur == "[":
             yield Sql()
 
@@ -163,7 +171,7 @@ def lex_num(chars):
     return token("".join(build))
 
 
-def lex_str(chars):
+def lex_str(chars, dedent=False):
     build = []
     start = next(chars)
     while chars.cur is not StopIteration:
@@ -183,7 +191,24 @@ def lex_str(chars):
 
         next(chars)
 
-    return Str("".join(build))
+    result = "".join(build)
+    if dedent:
+      lines = result.split("\n")
+      while len(lines) > 0 and lines[0].strip() == "":
+        lines = lines[1:]
+
+      indent_chars = len(lines[0]) - len(lines[0].lstrip(' \t'))
+      indent = lines[0][:indent_chars]
+      for line in lines:
+        if len(line.strip()) > 0 and not line.startswith(indent):
+          raise Exception("Indent mismatch in indented string")
+
+      lines = [line[indent_chars:] for line in lines]
+      result = "\n".join(lines)
+
+    return Str(result)
+
+
 
 
 inp = r'''foobar true null false { } [ ] , 1 2.3 "hello world" "\"wow
