@@ -264,24 +264,20 @@ def parse(tokens):
 
 
 def parse_assn(tokens):
-    if isinstance(tokens.cur, (Id, Str)):
-        key = tokens.cur.val
-    next(tokens)
-
+    key = tokens.expect(Id, Str).val
     tokens.expect(Eq)
-
     val = parse_val(tokens)
     return key, val
 
 
 def parse_val(tokens):
-    if isinstance(tokens.cur, Cul):
+    if tokens.has(Cul):
         val = parse_dict(tokens)
 
-    elif isinstance(tokens.cur, Sql):
+    elif tokens.has(Sql):
         val = parse_list(tokens)
 
-    elif isinstance(tokens.cur, (Boolean, Null, Int, Float, Str)):
+    elif tokens.has(Boolean, Null, Int, Float, Str):
         val = tokens.cur.val
         next(tokens)
 
@@ -294,29 +290,22 @@ def parse_val(tokens):
 
 
 def parse_dict(tokens):
-    tokens.expect(Cul)
-    into = {}
-
-    while not isinstance(tokens.cur, Cur):
-        key, val = parse_assn(tokens)
-        into[key] = val
-
-    tokens.expect(Cur)
+    with tokens.wrap(Cul, Cur):
+        into = {}
+        while not tokens.has(Cur):
+            key, val = parse_assn(tokens)
+            into[key] = val
 
     return into
 
 
 def parse_list(tokens):
-    tokens.expect(Sql)
-    into = []
-
-    while not isinstance(tokens.cur, Sqr):
-        val = parse_val(tokens)
-        into.append(val)
-        if isinstance(tokens.cur, Com):
-            next(tokens)
-
-    tokens.expect(Sqr)
+    with tokens.wrap(Sql, Sqr):
+        into = []
+        while not tokens.has(Sqr):
+            val = parse_val(tokens)
+            into.append(val)
+            tokens.maybe(Com)
 
     return into
 
