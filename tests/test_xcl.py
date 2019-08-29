@@ -47,6 +47,52 @@ lex_tests = {
 }
 
 
+in_1 = 'name = "foo"'
+out_1 = {"name": "foo"}
+
+in_2 = "one = 1"
+out_2 = {"one": 1}
+
+in_3 = "pi = 3.14"
+out_3 = {"pi": 3.14}
+
+in_4 = "ls = [1 2 3]"
+out_4 = {"ls": [1, 2, 3]}
+
+in_5 = "ls = [1, 2, 3]"
+out_5 = {"ls": [1, 2, 3]}
+
+in_6 = "ls = [1, 2, 3,]"
+out_6 = {"ls": [1, 2, 3]}
+
+in_7 = "ls = [1 2, 3]"
+out_7 = {"ls": [1, 2, 3]}
+
+in_8 = "a = 3 b = 4"
+out_8 = {"a": 3, "b": 4}
+
+in_9 = "x.x = 3"
+out_9 = {"x.x": 3}
+
+in_10 = '"x|x" = 3'
+out_10 = {"x|x": 3}
+
+in_11 = "p = {x = 0 y = 3}"
+out_11 = {"p": {"x": 0, "y": 3}}
+
+in_12 = "p = [[1 2], [3 4] [5, 6]]"
+out_12 = {"p": [[1, 2], [3, 4], [5, 6]]}
+
+# magic
+ins = [v for k, v in locals().items() if k.startswith("in_")]
+outs = [v for k, v in locals().items() if k.startswith("out_")]
+
+
 @pytest.mark.parametrize("input,output", lex_tests.items())
 def test_lexing(input, output):
     assert list(lex(input)) == [output]
+
+
+@pytest.mark.parametrize("input,output", zip(ins, outs))
+def test_parse(input, output):
+    assert loads(input) == output
