@@ -216,9 +216,97 @@ def lex_str(chars, dedent=False):
     return Str(result)
 
 
+def parse(tokens):
+  into = {}
+
+  tokens = Peek(iter(tokens))
+  while tokens.cur is not StopIteration:
+    key, val = parse_assn(tokens)
+    into[key] = val
+
+  return into
 
 
-inp = r'''foobar true null false { } [ ] , 1 2.3 "hello world" "\"wow
-world\""'''
-for tok in lex(inp):
-    print(repr(tok))
+def parse_assn(tokens):
+  if isinstance(tokens.cur, (Id, Str)):
+    key = tokens.cur.val
+  next(tokens)
+
+  if not isinstance(tokens.cur, Eq):
+    raise Exception(f"Expected Eq token, found {tokens.cur!r}")
+  next(tokens)
+
+  val = parse_val(tokens)
+  return key, val
+
+
+def parse_val(tokens):
+  if isinstance(tokens.cur, Cul):
+    val = parse_dict(tokens)
+
+  elif isinstance(tokens.cur, Sql):
+    val = parse_list(tokens)
+
+  elif isinstance(tokens.cur, (Boolean, Null, Int, Float, Str)):
+    val = tokens.cur.val
+    next(tokens)
+
+  else:
+    raise Exception(f"Expected one of Boolean, Null, Int, Float, Str, Cul, or Sql; found {tokens.cur!r}")
+
+  return val
+
+
+def parse_dict(tokens):
+  if not isinstance(tokens.cur, Cul):
+    raise Exception(f"Expected Cul; found {tokens.cur!r}")
+  next(tokens)
+
+  into = {}
+
+  while not isinstance(tokens.cur, Cur):
+    key, val = parse_assn(tokens)
+    into[key] = val
+
+  if not isinstance(tokens.cur, Cur):
+    raise Exception(f"Expected Cur; found {tokens.cur!r}")
+  next(tokens)
+
+  return into
+
+
+def parse_list(tokens):
+  if not isinstance(tokens.cur, Sql):
+    raise Exception(f"Expected Sql; found {tokens.cur!r}")
+  next(tokens)
+
+  into = []
+  while not isinstance(tokens.cur, Sqr):
+    val = parse_val(tokens)
+    into.append(val)
+    if isinstance(tokens.cur, Com):
+      next(tokens)
+
+  if not isinstance(tokens.cur, Sqr):
+    raise Exception(f"Expected Sqr; found {tokens.cur!r}")
+  next(tokens)
+
+  return into
+
+
+inp = """name = "John"
+house = {
+  built = 1962
+  sqft = 1362.2
+}
+includes = [
+  {
+    url = "https://github.com/philipdexter/std.mold"
+  }
+  {
+    url = "https://github.com/scizzorz/python.mold"
+  }
+]
+"""
+
+print(parse(lex(inp)))
