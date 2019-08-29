@@ -125,6 +125,15 @@ def lex(text):
             yield lex_num(chars)
             continue
 
+        if chars.cur == "0":
+            next(chars)
+            if chars.cur == ".":
+                next(chars)
+                yield lex_num(chars, start="0.")
+            else:
+                yield Int(0)
+            continue
+
         if chars.cur == '"':
             yield lex_str(chars)
             continue
@@ -171,16 +180,13 @@ def lex_id(chars):
     return KEYWORD_MAP.get(id, Id)(id)
 
 
-def lex_num(chars):
-    build = []
-    token = Int
+def lex_num(chars, start=""):
+    build = list(start)
     while chars.cur is not StopIteration and chars.cur in VALID_NUM:
-        if chars.cur == ".":
-            token = Float
-
         build.append(chars.cur)
         next(chars)
 
+    token = Float if "." in build else Int
     return token("".join(build))
 
 
