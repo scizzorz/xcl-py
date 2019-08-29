@@ -1,6 +1,7 @@
 __version__ = "0.1.0"
 
 import string
+from contextlib import contextmanager
 
 
 class Peek:
@@ -24,12 +25,31 @@ class Peek:
                 self.cur = StopIteration
         return ret
 
-    def expect(self, what):
-        if not isinstance(next(self), what):
-            if isinstance(what, (tuple, list)):
-                choices = ", ".join(x.__class__.__name__ for x in what)
+    def expect(self, *what):
+        check = next(self)
+        if not isinstance(check, what):
+            if len(what) > 1:
+                choices = ", ".join(x.__name__ for x in what)
                 raise Exception(f"Expected any of {choices}; found {self.cur!r}")
-            raise Exception(f"Expected {what}; found {self.cur!r}")
+            raise Exception(f"Expected {what[0]}; found {self.cur!r}")
+
+        return check
+
+    def has(self, *what):
+        return self.cur if isinstance(self.cur, what) else None
+
+    def maybe(self, *what):
+        check = self.has(*what)
+        if check:
+            next(self)
+
+        return check
+
+    @contextmanager
+    def wrap(self, left, right):
+        self.expect(left)
+        yield
+        self.expect(right)
 
 
 class Token:
