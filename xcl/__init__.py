@@ -113,10 +113,7 @@ SKIP = string.whitespace
 def lex(text):
     chars = Peek(iter(text))
 
-    while True:
-        if chars.cur is StopIteration:
-            break
-
+    while chars.cur is not StopIteration:
         if chars.cur in VALID_ID_START:
             yield lex_id(chars)
             continue
