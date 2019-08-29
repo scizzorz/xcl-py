@@ -51,7 +51,10 @@ class Id(Token):
 
 class Boolean(Token):
     def __init__(self, val=None):
-        self.val = val.lower() == "true"
+        if isinstance(val, str):
+            self.val = val.lower() == "true"
+        else:
+            self.val = bool(val)
 
 
 class Null(Token):
