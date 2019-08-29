@@ -90,6 +90,10 @@ class Com(Token):
     pass
 
 
+class Eq(Token):
+    pass
+
+
 KEYWORD_MAP = {"true": Boolean, "false": Boolean, "null": Null}
 STR_ESCAPES = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "'": "'"}
 
@@ -141,6 +145,9 @@ def lex(text):
 
         if chars.cur == ",":
             yield Com()
+
+        if chars.cur == "=":
+            yield Eq()
 
         try:
             next(chars)
