@@ -29,6 +29,9 @@ class Token:
     def __init__(self, val=None):
         self.val = val
 
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__) and (self.val == other.val)
+
     def __str__(self):
         if self.val is not None:
             return str(self.val)
