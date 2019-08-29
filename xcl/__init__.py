@@ -123,13 +123,13 @@ def lex(text):
             yield lex_str(chars)
             continue
 
-        if chars.cur == '|':
+        if chars.cur == "|":
             next(chars)
             if chars.cur == '"':
-              yield lex_str(chars, dedent=True)
-              continue
+                yield lex_str(chars, dedent=True)
+                continue
             else:
-              raise Exception(f"Unexpected character sequence: |{chars.cur}")
+                raise Exception(f"Unexpected character sequence: |{chars.cur}")
 
         if chars.cur == "[":
             yield Sql()
@@ -200,98 +200,100 @@ def lex_str(chars, dedent=False):
 
     result = "".join(build)
     if dedent:
-      lines = result.split("\n")
-      while len(lines) > 0 and lines[0].strip() == "":
-        lines = lines[1:]
+        lines = result.split("\n")
+        while len(lines) > 0 and lines[0].strip() == "":
+            lines = lines[1:]
 
-      indent_chars = len(lines[0]) - len(lines[0].lstrip(' \t'))
-      indent = lines[0][:indent_chars]
-      for line in lines:
-        if len(line.strip()) > 0 and not line.startswith(indent):
-          raise Exception("Indent mismatch in indented string")
+        indent_chars = len(lines[0]) - len(lines[0].lstrip(" \t"))
+        indent = lines[0][:indent_chars]
+        for line in lines:
+            if len(line.strip()) > 0 and not line.startswith(indent):
+                raise Exception("Indent mismatch in indented string")
 
-      lines = [line[indent_chars:] for line in lines]
-      result = "\n".join(lines)
+        lines = [line[indent_chars:] for line in lines]
+        result = "\n".join(lines)
 
     return Str(result)
 
 
 def parse(tokens):
-  into = {}
+    into = {}
 
-  tokens = Peek(iter(tokens))
-  while tokens.cur is not StopIteration:
-    key, val = parse_assn(tokens)
-    into[key] = val
+    tokens = Peek(iter(tokens))
+    while tokens.cur is not StopIteration:
+        key, val = parse_assn(tokens)
+        into[key] = val
 
-  return into
+    return into
 
 
 def parse_assn(tokens):
-  if isinstance(tokens.cur, (Id, Str)):
-    key = tokens.cur.val
-  next(tokens)
+    if isinstance(tokens.cur, (Id, Str)):
+        key = tokens.cur.val
+    next(tokens)
 
-  if not isinstance(tokens.cur, Eq):
-    raise Exception(f"Expected Eq token, found {tokens.cur!r}")
-  next(tokens)
+    if not isinstance(tokens.cur, Eq):
+        raise Exception(f"Expected Eq token, found {tokens.cur!r}")
+    next(tokens)
 
-  val = parse_val(tokens)
-  return key, val
+    val = parse_val(tokens)
+    return key, val
 
 
 def parse_val(tokens):
-  if isinstance(tokens.cur, Cul):
-    val = parse_dict(tokens)
+    if isinstance(tokens.cur, Cul):
+        val = parse_dict(tokens)
 
-  elif isinstance(tokens.cur, Sql):
-    val = parse_list(tokens)
+    elif isinstance(tokens.cur, Sql):
+        val = parse_list(tokens)
 
-  elif isinstance(tokens.cur, (Boolean, Null, Int, Float, Str)):
-    val = tokens.cur.val
-    next(tokens)
+    elif isinstance(tokens.cur, (Boolean, Null, Int, Float, Str)):
+        val = tokens.cur.val
+        next(tokens)
 
-  else:
-    raise Exception(f"Expected one of Boolean, Null, Int, Float, Str, Cul, or Sql; found {tokens.cur!r}")
+    else:
+        raise Exception(
+            f"Expected one of Boolean, Null, Int, Float, Str, Cul, or Sql; found {tokens.cur!r}"
+        )
 
-  return val
+    return val
 
 
 def parse_dict(tokens):
-  if not isinstance(tokens.cur, Cul):
-    raise Exception(f"Expected Cul; found {tokens.cur!r}")
-  next(tokens)
+    if not isinstance(tokens.cur, Cul):
+        raise Exception(f"Expected Cul; found {tokens.cur!r}")
+    next(tokens)
 
-  into = {}
+    into = {}
 
-  while not isinstance(tokens.cur, Cur):
-    key, val = parse_assn(tokens)
-    into[key] = val
+    while not isinstance(tokens.cur, Cur):
+        key, val = parse_assn(tokens)
+        into[key] = val
 
-  if not isinstance(tokens.cur, Cur):
-    raise Exception(f"Expected Cur; found {tokens.cur!r}")
-  next(tokens)
+    if not isinstance(tokens.cur, Cur):
+        raise Exception(f"Expected Cur; found {tokens.cur!r}")
+    next(tokens)
 
-  return into
+    return into
 
 
 def parse_list(tokens):
-  if not isinstance(tokens.cur, Sql):
-    raise Exception(f"Expected Sql; found {tokens.cur!r}")
-  next(tokens)
+    if not isinstance(tokens.cur, Sql):
+        raise Exception(f"Expected Sql; found {tokens.cur!r}")
+    next(tokens)
 
-  into = []
-  while not isinstance(tokens.cur, Sqr):
-    val = parse_val(tokens)
-    into.append(val)
-    if isinstance(tokens.cur, Com):
-      next(tokens)
+    into = []
+    while not isinstance(tokens.cur, Sqr):
+        val = parse_val(tokens)
+        into.append(val)
+        if isinstance(tokens.cur, Com):
+            next(tokens)
 
-  if not isinstance(tokens.cur, Sqr):
-    raise Exception(f"Expected Sqr; found {tokens.cur!r}")
-  next(tokens)
+    if not isinstance(tokens.cur, Sqr):
+        raise Exception(f"Expected Sqr; found {tokens.cur!r}")
+    next(tokens)
 
-  return into
+    return into
 
 
 inp = """name = "John"
