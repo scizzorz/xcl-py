@@ -1,0 +1,7 @@
+includes:
+  - url: "https://github.com/scizzorz/python.mold"
+    ref: "dev"
+
+variables:
+  PYRUN: "poetry run"
+  PYDIRS: "xcl"

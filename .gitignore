@@ -1,2 +1,6 @@
 __pycache__
 .pyc
+
+.mold*
+mold/.clones
+mold/.scripts
