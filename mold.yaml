@@ -4,4 +4,4 @@ includes:
 
 variables:
   PYRUN: "poetry run"
-  PYDIRS: "xcl"
+  PYDIRS: "xcl tests"
