@@ -103,8 +103,8 @@ class Eq(Token):
 KEYWORD_MAP = {"true": Boolean, "false": Boolean, "null": Null}
 STR_ESCAPES = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "'": "'"}
 
-VALID_ID_START = string.ascii_letters + "_"
-VALID_ID = VALID_ID_START + string.digits
+VALID_ID_START = string.ascii_letters + "_-*?+."
+VALID_ID = VALID_ID_START + string.digits + "|"
 VALID_NUM_START = "123456789"
 VALID_NUM = string.digits + "."
 SKIP = string.whitespace
