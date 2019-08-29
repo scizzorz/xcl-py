@@ -296,19 +296,5 @@ def parse_list(tokens):
     return into
 
 
-inp = """name = "John"
-house = {
-  built = 1962
-  sqft = 1362.2
-}
-includes = [
-  {
-    url = "https://github.com/philipdexter/std.mold"
-  }
-  {
-    url = "https://github.com/scizzorz/python.mold"
-  }
-]
-"""
-
-print(parse(lex(inp)))
+def loads(s):
+    return parse(lex(s))
