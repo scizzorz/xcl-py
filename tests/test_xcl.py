@@ -14,7 +14,6 @@ from xcl import (
     Com,
     Eq,
     lex,
-    parse,
     loads,
 )
 
@@ -82,6 +81,9 @@ out_11 = {"p": {"x": 0, "y": 3}}
 
 in_12 = "p = [[1 2], [3 4] [5, 6]]"
 out_12 = {"p": [[1, 2], [3, 4], [5, 6]]}
+
+in_13 = "p = {tl = [1 2] br = [3 4]}"
+out_13 = {"p": {"tl": [1, 2], "br": [3, 4]}}
 
 # magic
 ins = [v for k, v in locals().items() if k.startswith("in_")]
