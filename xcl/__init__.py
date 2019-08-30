@@ -25,15 +25,15 @@ class Peek:
                 self.cur = StopIteration
         return ret
 
-    @staticmethod
-    def check(thing, what):
-        return isinstance(thing, what)
-
     def done(self):
         return self.cur is StopIteration
 
     def __bool__(self):
         return not self.done()
+
+    @classmethod
+    def check(cls, thing, what):
+        raise Exception(f"{cls.__name__} does not implement .check()")
 
     def expect(self, *what):
         check = next(self)
@@ -60,6 +60,12 @@ class Peek:
         self.expect(left)
         yield
         self.expect(right)
+
+
+class TokenPeek(Peek):
+    @staticmethod
+    def check(thing, what):
+        return isinstance(thing, what)
 
 
 class CharPeek(Peek):
@@ -262,7 +268,7 @@ def lex_str(chars, dedent=False):
 def parse(tokens):
     into = {}
 
-    tokens = Peek(iter(tokens))
+    tokens = TokenPeek(iter(tokens))
     while tokens:
         key, val = parse_assn(tokens)
         into[key] = val
