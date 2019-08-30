@@ -156,7 +156,7 @@ SKIP = string.whitespace
 def lex(text):
     chars = CharPeek(iter(text))
 
-    while not chars.done():
+    while chars:
         if chars.has(*VALID_ID_START):
             yield lex_id(chars)
             continue
@@ -209,7 +209,7 @@ def lex(text):
 
 def lex_id(chars):
     build = []
-    while not chars.done() and chars.has(*VALID_ID):
+    while chars and chars.has(*VALID_ID):
         build.append(next(chars))
 
     id = "".join(build)
@@ -218,7 +218,7 @@ def lex_id(chars):
 
 def lex_num(chars, start=""):
     build = list(start)
-    while not chars.done() and chars.has(*VALID_NUM):
+    while chars and chars.has(*VALID_NUM):
         build.append(next(chars))
 
     token = Float if "." in build else Int
@@ -228,7 +228,7 @@ def lex_num(chars, start=""):
 def lex_str(chars, dedent=False):
     build = []
     start = next(chars)
-    while not chars.done():
+    while chars:
         if chars.maybe(start):
             break
 
@@ -263,7 +263,7 @@ def parse(tokens):
     into = {}
 
     tokens = Peek(iter(tokens))
-    while not tokens.done():
+    while tokens:
         key, val = parse_assn(tokens)
         into[key] = val
 
